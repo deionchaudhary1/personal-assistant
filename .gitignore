@@ -1,0 +1,10 @@
+.frugal-fable/
+backend/.venv/
+backend/assistant.db
+backend/credentials.json
+__pycache__/
+*.pyc
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/
+.DS_Store
