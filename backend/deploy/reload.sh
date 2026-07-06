@@ -12,7 +12,13 @@ echo "==> Building frontend"
 
 echo "==> Restarting $LABEL"
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
-launchctl bootstrap "gui/$(id -u)" "$PLIST"
+# bootout tears down asynchronously; bootstrapping too soon fails with an
+# I/O error, so wait briefly and retry once if needed.
+sleep 2
+launchctl bootstrap "gui/$(id -u)" "$PLIST" || {
+  sleep 3
+  launchctl bootstrap "gui/$(id -u)" "$PLIST"
+}
 
 echo "==> Done. Checking health..."
 sleep 1

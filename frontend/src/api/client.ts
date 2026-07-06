@@ -1,4 +1,4 @@
-import type { Task, TaskDraft, HealthResult, Priority, TaskStatus } from "./types";
+import type { Task, TaskDraft, HealthResult, Priority, TaskStatus, NewsItem } from "./types";
 
 const BASE = "/api";
 
@@ -74,6 +74,12 @@ export function parseTasks(text: string): Promise<{ drafts: TaskDraft[] }> {
 
 export function getHealth(): Promise<HealthResult> {
   return request<HealthResult>(`/health`);
+}
+
+// ---- News ----
+
+export function getNews(): Promise<{ items: NewsItem[] }> {
+  return request<{ items: NewsItem[] }>(`/news`);
 }
 
 export { request };

@@ -108,7 +108,7 @@ p {
 .app-main {
   flex: 1;
   width: 100%;
-  max-width: 720px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 24px;
   box-sizing: border-box;
@@ -120,6 +120,34 @@ p {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.app-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.app-layout > .tasks-page {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-layout > .news-panel {
+  flex: 0 0 300px;
+  width: 300px;
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .app-layout > .news-panel {
+    flex: 1 1 auto;
+    width: 100%;
+  }
 }
 
 .card {
@@ -382,5 +410,50 @@ textarea {
 
 .task-due {
   font-size: 13px;
+  opacity: 0.8;
+}
+
+/* ---- News panel ---- */
+
+.news-panel {
+  align-self: flex-start;
+}
+
+.news-log {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+}
+
+.news-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.news-title {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.news-title:hover,
+.news-title:focus-visible {
+  text-decoration: underline;
+}
+
+.news-summary {
+  margin: 0;
+  font-size: 13px;
+}
+
+.news-date {
+  font-size: 12px;
   opacity: 0.8;
 }

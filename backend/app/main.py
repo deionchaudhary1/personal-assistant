@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.db import create_db_and_tables
-from app.routers import health, tasks
+from app.routers import health, news, tasks
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
@@ -39,6 +39,7 @@ app.add_middleware(
 
 for module in (
     health,
+    news,
     tasks,
 ):
     app.include_router(module.router, prefix="/api")

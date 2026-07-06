@@ -26,3 +26,10 @@ export interface HealthResult {
   ok: boolean;
   ollama: boolean;
 }
+
+export interface NewsItem {
+  title: string;
+  summary: string;
+  url: string;
+  published_date: string; // YYYY-MM-DD
+}
