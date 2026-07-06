@@ -1,14 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  createTask,
-  deleteTask,
-  getTasks,
-  parseTasks,
-  updateTask,
-} from "../api/client";
+import { createTask, deleteTask, getTasks, parseTasks, updateTask } from "../api/client";
 import type { Priority, Task, TaskDraft } from "../api/types";
-import PriorityBadge from "../components/PriorityBadge";
 import TaskForm, { type TaskFormValues } from "../components/TaskForm";
 
 interface DraftRow extends TaskDraft {
@@ -22,7 +15,6 @@ export default function Tasks() {
     queryFn: () => getTasks(),
   });
 
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [pasteText, setPasteText] = useState("");
   const [drafts, setDrafts] = useState<DraftRow[] | null>(null);
 
@@ -36,25 +28,15 @@ export default function Tasks() {
         title: values.title,
         description: values.description || null,
         priority: values.priority,
-        estimated_minutes: values.estimated_minutes,
         due_date: values.due_date || null,
       }),
     onSuccess: invalidateTasks,
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, values }: { id: number; values: TaskFormValues }) =>
-      updateTask(id, {
-        title: values.title,
-        description: values.description || null,
-        priority: values.priority,
-        estimated_minutes: values.estimated_minutes,
-        due_date: values.due_date || null,
-      }),
-    onSuccess: () => {
-      invalidateTasks();
-      setEditingId(null);
-    },
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, done }: { id: number; done: boolean }) =>
+      updateTask(id, { status: done ? "completed" : "pending" }),
+    onSuccess: invalidateTasks,
   });
 
   const deleteMutation = useMutation({
@@ -76,7 +58,6 @@ export default function Tasks() {
           title: row.title,
           description: row.description,
           priority: row.priority,
-          estimated_minutes: row.estimated_minutes,
           due_date: row.due_date,
           source: "llm_parsed",
         });
@@ -105,73 +86,53 @@ export default function Tasks() {
 
   return (
     <div className="page tasks-page">
-      <div className="page-header">
-        <h1>Tasks</h1>
-      </div>
-
       <section className="card">
-        <h2>New task</h2>
+        <h2>&gt; new_task</h2>
         <TaskForm
-          submitLabel="Add task"
+          submitLabel="add"
           onSubmit={(values) => createMutation.mutate(values)}
         />
         {createMutation.isError && (
           <p className="inline-status error">
-            {(createMutation.error as Error)?.message ?? "Failed to add task"}
+            {(createMutation.error as Error)?.message ?? "failed to add task"}
           </p>
         )}
       </section>
 
       <section className="card">
-        <h2>All tasks</h2>
-        {isLoading && <p className="inline-status">Loading tasks…</p>}
+        <h2>&gt; tasks</h2>
+        {isLoading && <p className="inline-status">loading tasks…</p>}
         {isError && (
           <p className="inline-status error">
-            Couldn't load tasks: {(error as Error)?.message ?? "backend unreachable"}
+            couldn't load tasks: {(error as Error)?.message ?? "backend unreachable"}
           </p>
         )}
         {tasks && tasks.length === 0 && (
-          <p className="empty-state">No tasks yet — add one above.</p>
+          <p className="empty-state">no tasks yet — add one above.</p>
         )}
         {tasks && tasks.length > 0 && (
-          <table className="tasks-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Priority</th>
-                <th>Est. min</th>
-                <th>Due</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((t) => (
-                <TaskRow
-                  key={t.id}
-                  task={t}
-                  isEditing={editingId === t.id}
-                  onEdit={() => setEditingId(t.id)}
-                  onCancelEdit={() => setEditingId(null)}
-                  onSave={(values) => updateMutation.mutate({ id: t.id, values })}
-                  onDelete={() => {
-                    if (window.confirm(`Delete task "${t.title}"?`)) {
-                      deleteMutation.mutate(t.id);
-                    }
-                  }}
-                />
-              ))}
-            </tbody>
-          </table>
+          <ul className="task-log">
+            {tasks.map((t) => (
+              <TaskRow
+                key={t.id}
+                task={t}
+                onToggle={(done) => toggleMutation.mutate({ id: t.id, done })}
+                onDelete={() => deleteMutation.mutate(t.id)}
+              />
+            ))}
+          </ul>
         )}
       </section>
 
       <section className="card">
-        <h2>Paste to-do list</h2>
+        <h2>&gt; paste_list</h2>
         <form onSubmit={handleParse}>
+          <label className="prompt-label" htmlFor="paste-textarea">
+            &gt; paste a messy to-do list, one item per line
+          </label>
           <textarea
+            id="paste-textarea"
             rows={6}
-            placeholder={"Paste a messy to-do list, one item per line…"}
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
           />
@@ -181,18 +142,18 @@ export default function Tasks() {
               className="btn-primary"
               disabled={parseMutation.isPending || !pasteText.trim()}
             >
-              {parseMutation.isPending ? "Asking local AI…" : "Parse with AI"}
+              {parseMutation.isPending ? "asking local ai…" : "parse with ai"}
             </button>
           </div>
         </form>
         {parseMutation.isError && (
           <p className="inline-status error">
-            {(parseMutation.error as Error)?.message ?? "Failed to parse text"}
+            {(parseMutation.error as Error)?.message ?? "failed to parse text"}
           </p>
         )}
 
         {drafts && drafts.length === 0 && (
-          <p className="empty-state">No tasks found in that text.</p>
+          <p className="empty-state">no tasks found in that text.</p>
         )}
 
         {drafts && drafts.length > 0 && (
@@ -201,11 +162,10 @@ export default function Tasks() {
               <thead>
                 <tr>
                   <th></th>
-                  <th>Title</th>
-                  <th>Description</th>
-                  <th>Priority</th>
-                  <th>Est. min</th>
-                  <th>Due</th>
+                  <th>title</th>
+                  <th>description</th>
+                  <th>priority</th>
+                  <th>due</th>
                 </tr>
               </thead>
               <tbody>
@@ -241,21 +201,10 @@ export default function Tasks() {
                           updateDraft(idx, { priority: e.target.value as Priority })
                         }
                       >
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
+                        <option value="high">high</option>
+                        <option value="medium">medium</option>
+                        <option value="low">low</option>
                       </select>
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min={5}
-                        step={5}
-                        value={d.estimated_minutes}
-                        onChange={(e) =>
-                          updateDraft(idx, { estimated_minutes: Number(e.target.value) })
-                        }
-                      />
                     </td>
                     <td>
                       <input
@@ -279,11 +228,11 @@ export default function Tasks() {
                 }
               >
                 {addDraftsMutation.isPending
-                  ? "Adding…"
-                  : `Add ${checkedCount} task${checkedCount === 1 ? "" : "s"}`}
+                  ? "adding…"
+                  : `add ${checkedCount} task${checkedCount === 1 ? "" : "s"}`}
               </button>
               <button className="btn-secondary" onClick={() => setDrafts(null)}>
-                Discard
+                discard
               </button>
             </div>
           </div>
@@ -295,58 +244,37 @@ export default function Tasks() {
 
 function TaskRow({
   task,
-  isEditing,
-  onEdit,
-  onCancelEdit,
-  onSave,
+  onToggle,
   onDelete,
 }: {
   task: Task;
-  isEditing: boolean;
-  onEdit: () => void;
-  onCancelEdit: () => void;
-  onSave: (values: TaskFormValues) => void;
+  onToggle: (done: boolean) => void;
   onDelete: () => void;
 }) {
-  if (isEditing) {
-    return (
-      <tr>
-        <td colSpan={6}>
-          <TaskForm
-            submitLabel="Save"
-            initial={{
-              title: task.title,
-              description: task.description ?? "",
-              priority: task.priority,
-              estimated_minutes: task.estimated_minutes,
-              due_date: task.due_date ?? "",
-            }}
-            onSubmit={onSave}
-            onCancel={onCancelEdit}
-          />
-        </td>
-      </tr>
-    );
-  }
+  const done = task.status === "completed";
   return (
-    <tr>
-      <td>{task.title}</td>
-      <td>
-        <PriorityBadge priority={task.priority} />
-      </td>
-      <td>{task.estimated_minutes}</td>
-      <td>{task.due_date ?? "—"}</td>
-      <td>
-        <span className={`status-chip status-${task.status}`}>{task.status}</span>
-      </td>
-      <td className="row-actions">
-        <button className="btn-small btn-secondary" onClick={onEdit}>
-          Edit
-        </button>
-        <button className="btn-small btn-danger" onClick={onDelete}>
-          Delete
-        </button>
-      </td>
-    </tr>
+    <li className={`task-row priority-${task.priority}`}>
+      <button
+        type="button"
+        className="task-checkbox"
+        role="checkbox"
+        aria-checked={done}
+        aria-label={done ? "mark pending" : "mark completed"}
+        onClick={() => onToggle(!done)}
+      >
+        [{done ? "x" : " "}]
+      </button>
+      <span className={done ? "task-title done" : "task-title"}>{task.title}</span>
+      <span className="task-tag">[{task.priority}]</span>
+      {task.due_date && <span className="task-due">due {task.due_date}</span>}
+      <button
+        type="button"
+        className="task-rm"
+        aria-label={`delete ${task.title}`}
+        onClick={onDelete}
+      >
+        [rm]
+      </button>
+    </li>
   );
 }

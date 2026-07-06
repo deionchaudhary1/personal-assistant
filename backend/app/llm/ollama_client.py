@@ -1,8 +1,7 @@
 """Async Ollama client with robust fallbacks.
 
-Parse/estimate calls MUST never raise to the caller in a way that produces a
-500 — callers use the deterministic fallbacks. Doc Q&A raises OllamaUnavailable
-so the router can translate to a 503.
+The parse call MUST never raise to the caller in a way that produces a 500 —
+callers use the deterministic fallback.
 """
 
 from __future__ import annotations
@@ -21,10 +20,6 @@ MODEL = "llama3.1:8b"
 TIMEOUT = 90.0
 
 _VALID_PRIORITIES = {"high", "medium", "low"}
-
-
-class OllamaUnavailable(Exception):
-    """Raised when Ollama cannot be reached (used for doc Q&A 503)."""
 
 
 async def _chat(messages: List[Dict[str, str]], json_format: bool) -> str:
@@ -69,7 +64,6 @@ def fallback_parse(text: str) -> List[Dict[str, Any]]:
                 "title": stripped,
                 "description": None,
                 "priority": "medium",
-                "estimated_minutes": 30,
                 "due_date": None,
             }
         )
@@ -97,12 +91,6 @@ def _sanitize_draft(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     priority = raw.get("priority")
     if priority not in _VALID_PRIORITIES:
         priority = "medium"
-    try:
-        minutes = int(raw.get("estimated_minutes") or 30)
-    except (TypeError, ValueError):
-        minutes = 30
-    if minutes <= 0:
-        minutes = 30
     description = raw.get("description")
     if not isinstance(description, str):
         description = None
@@ -110,7 +98,6 @@ def _sanitize_draft(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "title": title.strip(),
         "description": description,
         "priority": priority,
-        "estimated_minutes": minutes,
         "due_date": _coerce_due_date(raw.get("due_date")),
     }
 
@@ -140,37 +127,3 @@ async def parse_tasks(text: str) -> List[Dict[str, Any]]:
         return cleaned
     except Exception:
         return fallback_parse(text)
-
-
-async def estimate_minutes(title: str, description: str) -> int:
-    """Return an int estimate. Never raises; falls back to 30."""
-    try:
-        content = await _chat(
-            [
-                {"role": "system", "content": prompts.ESTIMATE_SYSTEM},
-                {"role": "user", "content": prompts.estimate_user_prompt(title, description)},
-            ],
-            json_format=True,
-        )
-        data = json.loads(content)
-        minutes = int(data.get("estimated_minutes"))
-        if minutes <= 0:
-            return 30
-        return minutes
-    except Exception:
-        return 30
-
-
-async def answer_question(question: str, context: str) -> str:
-    """Answer a doc question. Raises OllamaUnavailable if Ollama is unreachable."""
-    try:
-        content = await _chat(
-            [
-                {"role": "system", "content": prompts.QA_SYSTEM},
-                {"role": "user", "content": prompts.qa_user_prompt(question, context)},
-            ],
-            json_format=False,
-        )
-    except Exception as exc:  # connection/timeout/http error
-        raise OllamaUnavailable(str(exc)) from exc
-    return (content or "").strip()

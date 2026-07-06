@@ -1,19 +1,18 @@
-# Personal Scheduling Assistant
+# Personal To-Do Assistant
 
-A local, single-user web app that turns your to-do list into a time-blocked day/week
-schedule — aware of your Google Calendar commitments and working hours — with local-LLM
-task parsing (Ollama), native macOS notifications, and an end-of-day review that rolls
-unfinished tasks forward by priority.
+A local, single-user, terminal-styled to-do list that turns pasted or typed
+text into tasks — with local-LLM task parsing (Ollama) to pull out titles,
+priorities, and due dates. One page, one flat list, ordered automatically.
 
-Everything runs on your Mac. The only external service is Google Calendar (optional).
-The LLM is local (Ollama, `llama3.1:8b`) — no cloud AI calls.
+Everything runs on your Mac. The LLM is local (Ollama, `llama3.1:8b`) — no
+cloud AI calls, no calendar integration, no notifications.
 
 ## Requirements
 
-- macOS (notifications use `osascript`)
 - Python 3.11+ and Node 18+
-- [Ollama](https://ollama.com) with `llama3.1:8b` pulled (optional — the app degrades
-  gracefully to non-AI fallbacks if Ollama isn't running)
+- [Ollama](https://ollama.com) with `llama3.1:8b` pulled (optional — the app
+  degrades gracefully to a deterministic non-AI fallback if Ollama isn't
+  running)
 
 ## Run it
 
@@ -38,30 +37,58 @@ cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 cd frontend && npm install
 ```
 
-## Google Calendar (optional)
+## How it works
 
-1. In [Google Cloud Console](https://console.cloud.google.com/), create a project,
-   enable the **Google Calendar API**, and create an **OAuth client ID** of type
-   **Web application** with the authorized redirect URI
-   `http://localhost:8000/api/calendar/oauth-callback`.
-2. Download the client secret JSON and save it as `backend/credentials.json`.
-3. In the app: **Settings → Google Calendar → Connect**, approve in the browser.
-4. Events sync automatically every 30 minutes, or via **Sync now**.
+Deterministic and explainable — the LLM never decides ordering, only
+parsing:
 
-Without credentials, everything else works; you can enter busy blocks manually on the
-Today page.
+1. Add a task with the prompt-style form (title, description, priority,
+   due date), or paste free-form to-do text and let Ollama (or the
+   deterministic fallback if Ollama isn't running) extract discrete tasks.
+2. The list is ordered automatically on every load: **priority
+   (high → low), then due date (soonest first, none last), then creation
+   time**. High/medium/low rows read in red/yellow/green, terminal-log
+   style.
+3. Check a task off (`[x]`) to mark it completed — it stays in the list,
+   struck through. `[rm]` deletes it. An unfinished task just stays on the
+   list, in its sorted position, for as long as it takes.
 
-## How scheduling works
+## Run it as a background app (PWA + LaunchAgent)
 
-Deterministic and explainable — the LLM never decides placement:
+For an always-on setup — no terminals, survives reboots, installs like a
+Mac app — the backend serves the built frontend directly, so one process
+runs everything:
 
-1. Tasks are ordered by **priority (high → low), then due date, then creation time**.
-2. Free slots = working hours − calendar/busy blocks − already-placed blocks
-   (today's slots also start no earlier than "now").
-3. Greedy first-fit places each task in the first slot it fits; anything that doesn't
-   fit is surfaced as "didn't fit today", never silently dropped.
-4. **End of Day Review**: check off what you finished; everything else returns to
-   pending and is rescheduled from tomorrow onward, re-ordered by the same rule.
+```bash
+cd frontend && npm run build   # backend serves whatever is in frontend/dist/
+```
+
+**Backend as a login service.** Copy
+`backend/deploy/com.personalassistant.backend.plist` to
+`~/Library/LaunchAgents/`, replacing `/ABSOLUTE/PATH/TO/personal-assistant`
+and `YOUR_USERNAME` with real values, then:
+
+```bash
+mkdir -p ~/Library/Logs/personal-assistant
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.personalassistant.backend.plist
+```
+
+The server now starts on login and restarts if it crashes (`KeepAlive`).
+Logs land in `~/Library/Logs/personal-assistant/`. After pulling code
+changes:
+
+```bash
+cd frontend && npm run build   # refresh what the backend serves
+launchctl bootout gui/$(id -u)/com.personalassistant.backend
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.personalassistant.backend.plist
+```
+
+**Install as a PWA.** Open http://localhost:8000 — Safari: **File → Add to
+Dock**; Chrome: address-bar install icon → **Install**. Either gives a
+standalone window and Dock icon backed by the always-running service.
+
+`npm run dev` (port 5174, proxying `/api` to :8000) still works unchanged
+for development.
 
 ## Tests
 
@@ -69,5 +96,5 @@ Deterministic and explainable — the LLM never decides placement:
 cd backend && .venv/bin/python -m pytest tests/ -q
 ```
 
-The scheduling engine (`backend/app/scheduler/engine.py`) is pure — no I/O — so its
+The ordering logic (`backend/app/ordering.py`) is a pure function, so its
 tests run with no database, network, or mocks.

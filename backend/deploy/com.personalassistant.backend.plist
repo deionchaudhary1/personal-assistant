@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template — replace /ABSOLUTE/PATH/TO/personal-assistant with the real
+  repo path (and adjust the log paths' username) before copying to
+  ~/Library/LaunchAgents/. See README "Run it as a background app".
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.personalassistant.backend</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/ABSOLUTE/PATH/TO/personal-assistant/backend/.venv/bin/uvicorn</string>
+        <string>app.main:app</string>
+        <string>--port</string>
+        <string>8000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/ABSOLUTE/PATH/TO/personal-assistant/backend</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/YOUR_USERNAME/Library/Logs/personal-assistant/backend.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/YOUR_USERNAME/Library/Logs/personal-assistant/backend.err.log</string>
+</dict>
+</plist>
