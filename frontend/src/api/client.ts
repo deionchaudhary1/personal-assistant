@@ -1,4 +1,4 @@
-import type { Task, TaskDraft, HealthResult, Priority, TaskStatus, NewsItem } from "./types";
+import type { Task, TaskDraft, HealthResult, Priority, TaskStatus, NewsDigestResponse } from "./types";
 
 const BASE = "/api";
 
@@ -78,8 +78,39 @@ export function getHealth(): Promise<HealthResult> {
 
 // ---- News ----
 
-export function getNews(): Promise<{ items: NewsItem[] }> {
-  return request<{ items: NewsItem[] }>(`/news`);
+export function getNews(): Promise<NewsDigestResponse> {
+  return request<NewsDigestResponse>(`/news`);
+}
+
+export function markNewsRead(id: number): Promise<NewsDigestResponse> {
+  return request<NewsDigestResponse>(`/news/${id}/read`, { method: "POST" });
+}
+
+export function markAllNewsRead(): Promise<NewsDigestResponse> {
+  return request<NewsDigestResponse>(`/news/read-all`, { method: "POST" });
+}
+
+// ---- Push ----
+
+export function getPushPublicKey(): Promise<{ public_key: string }> {
+  return request<{ public_key: string }>(`/push/public-key`);
+}
+
+export function subscribePush(sub: {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}): Promise<void> {
+  return request<void>(`/push/subscribe`, {
+    method: "POST",
+    body: JSON.stringify(sub),
+  });
+}
+
+export function unsubscribePush(endpoint: string): Promise<void> {
+  return request<void>(`/push/unsubscribe`, {
+    method: "POST",
+    body: JSON.stringify({ endpoint }),
+  });
 }
 
 export { request };

@@ -23,6 +23,24 @@
     <key>WorkingDirectory</key>
     <string>/ABSOLUTE/PATH/TO/personal-assistant/backend</string>
 
+    <!--
+      Web Push (plans/ENGAGE.md): generate keys once with
+        mkdir -p ~/.personal-assistant/vapid && cd ~/.personal-assistant/vapid && vapid --gen
+      (vapid ships with the backend venv via pywebpush/py-vapid), then fill in:
+      VAPID_PUBLIC_KEY = output of `vapid --applicationServerKey` (run in that dir)
+      VAPID_PRIVATE_KEY = absolute path to the generated private_key.pem
+      Leave unset to disable push entirely — the app runs fine without them.
+    -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>VAPID_PUBLIC_KEY</key>
+        <string>FILL_ME_IN</string>
+        <key>VAPID_PRIVATE_KEY</key>
+        <string>/Users/YOUR_USERNAME/.personal-assistant/vapid/private_key.pem</string>
+        <key>VAPID_SUBJECT</key>
+        <string>mailto:you@example.com</string>
+    </dict>
+
     <key>RunAtLoad</key>
     <true/>
 

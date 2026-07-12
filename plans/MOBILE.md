@@ -80,6 +80,12 @@ install prompt depends on one being registered.
   extra reverse proxy to run. Out of scope for the initial phone-via-
   Safari setup, worth a line in the README as a "if you want this on
   Android too" note.
+  - **Update: no longer optional.** `plans/ENGAGE.md` (push
+    notifications) needs a real secure context to subscribe to Web Push
+    from the phone — plain HTTP won't do, even on iOS Safari. That plan's
+    Step 1 promotes this follow-up to a hard prerequisite: finish the
+    Tailscale setup above, then run `tailscale cert` before attempting
+    the push-notification pieces.
 
 ## Security note (belongs in the README)
 

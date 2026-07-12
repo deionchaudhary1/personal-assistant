@@ -28,8 +28,23 @@ export interface HealthResult {
 }
 
 export interface NewsItem {
+  id: number;
+  source: string;
   title: string;
   summary: string;
   url: string;
   published_date: string; // YYYY-MM-DD
+  read_at: string | null; // ISO datetime
+}
+
+export interface Engagement {
+  current_streak: number;
+  longest_streak: number;
+  pet_stage: number;
+  pet_happiness: number;
+}
+
+export interface NewsDigestResponse {
+  items: NewsItem[];
+  engagement: Engagement;
 }

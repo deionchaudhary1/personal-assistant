@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Tasks from "./pages/Tasks";
 import NewsPanel from "./components/NewsPanel";
+import PetWidget from "./components/PetWidget";
 
 const queryClient = new QueryClient();
 
@@ -13,7 +14,10 @@ function App() {
         </header>
         <main className="app-main app-layout">
           <Tasks />
-          <NewsPanel />
+          <div className="sidebar">
+            <PetWidget />
+            <NewsPanel />
+          </div>
         </main>
       </div>
     </QueryClientProvider>

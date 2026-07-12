@@ -15,3 +15,4 @@ class NewsItem(SQLModel, table=True):
     url: str
     published_date: Date
     fetched_at: datetime = Field(default_factory=datetime.now)
+    read_at: Optional[datetime] = None

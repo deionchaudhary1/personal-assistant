@@ -1,4 +1,4 @@
-"""arXiv Atom-feed client for the daily AI news digest.
+"""arXiv Atom-feed source adapter for the daily AI news digest.
 
 Parsing is split out as pure functions (``parse_feed`` / ``_truncate_summary``)
 so tests can exercise them against a hand-written XML fixture with no
@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 from datetime import date as Date
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 import httpx
@@ -87,3 +87,13 @@ async def fetch_daily_digest() -> List[Dict[str, Any]]:
         resp.raise_for_status()
         body = resp.content
     return parse_feed(body)
+
+
+class ArxivSource:
+    """SourceAdapter wrapping the arXiv Atom feed client above."""
+
+    name = "arxiv"
+    refresh_interval = timedelta(hours=24)
+
+    async def fetch(self) -> List[Dict[str, Any]]:
+        return await fetch_daily_digest()

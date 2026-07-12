@@ -1,4 +1,4 @@
-"""Tests for app/news/arxiv_client.py's pure parsing/truncation functions.
+"""Tests for app/news/sources/arxiv.py's pure parsing/truncation functions.
 
 No network access — parse_feed is exercised against a hand-written Atom XML
 fixture with realistic namespace/structure.
@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from app.news.arxiv_client import _truncate_summary, parse_feed
+from app.news.sources.arxiv import _truncate_summary, parse_feed
 
 FIXTURE_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">

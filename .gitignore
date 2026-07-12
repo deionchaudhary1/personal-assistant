@@ -2,6 +2,9 @@
 backend/.venv/
 backend/assistant.db
 backend/credentials.json
+*.pem
+backend/deploy/vapid*
+backend/.env
 __pycache__/
 *.pyc
 .pytest_cache/
